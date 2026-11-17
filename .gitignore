@@ -1,0 +1,16 @@
+# Python virtual environments
+.venv/
+venv/
+
+# Environment variables and secrets
+.env
+.streamlit/secrets.toml
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Test and development files
+.pytest_cache/
+.mypy_cache/
+.DS_Store
