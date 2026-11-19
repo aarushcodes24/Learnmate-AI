@@ -7,7 +7,7 @@ from app.ai.content_generation import (
     generate_quiz,
 )
 from app.ai.prompts import TUTOR_INSTRUCTIONS
-from app.ai.providers import OpenAIProvider
+from app.ai.providers.gemini_provider import GeminiProvider
 from app.ai.rag import InMemoryRetriever, RAGPipeline
 from app.ai.rag.retriever import RetrievedChunk
 from app.ai.student_analysis import StudentAnalysis, analyse_student_response
@@ -29,7 +29,12 @@ class LearnMateAI:
 
     def __init__(self, config: AIConfig | None = None):
         self.config = config or get_ai_config()
-        self.provider = OpenAIProvider(self.config)
+        self.provider = GeminiProvider(
+        api_key=self.config.api_key,
+        model=self.config.model,
+        embedding_model=self.config.embedding_model,
+        embedding_dimensions=self.config.embedding_dimensions,
+)
         self.retriever = InMemoryRetriever()
         self.rag = RAGPipeline(
             self.provider,
@@ -42,6 +47,7 @@ class LearnMateAI:
 
     def ingest_text(self, text: str, metadata: dict | None = None) -> int:
         return len(self.rag.ingest_text(text, metadata))
+
 
     def ask(
         self,
@@ -61,8 +67,12 @@ class LearnMateAI:
         if topic:
             filter_data.setdefault("topic", topic)
 
+        print("DEBUG 1: Starting retrieval", flush=True)
         results = self.rag.retrieve(question, metadata_filter=filter_data)
+        print(f"DEBUG 2: Retrieval complete. Chunks: {len(results)}", flush=True)
+
         context = self.rag.build_context(results)
+        print("DEBUG 3: Context built", flush=True)
 
         if syllabus_context:
             context = f"SYLLABUS SCOPE:\n{syllabus_context}\n\nRETRIEVED MATERIAL:\n{context}"
@@ -78,8 +88,12 @@ Academic context:
 {context}
 """.strip()
 
+        print("DEBUG 4: Sending to Gemini", flush=True)
         answer = self.provider.generate(TUTOR_INSTRUCTIONS, user_input)
+        print("DEBUG 5: Gemini response received", flush=True)
+
         return TutorResponse(answer=answer, sources=results)
+
 
     def analyse_response(
         self,

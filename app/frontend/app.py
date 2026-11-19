@@ -3,11 +3,17 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+from app.ai.service import LearnMateAI
+
+
 from app.frontend.student.dashboard import show_student_dashboard
 from app.frontend.teacher.dashboard import show_teacher_dashboard
 
 from app.frontend.components.metrics import show_metric
 
+@st.cache_resource
+def get_ai_service():
+    return LearnMateAI()
 
 def run_app():
 
@@ -272,27 +278,46 @@ def run_app():
                         key=f"topic_{subject}_{i}"
                     )
 
+        
         elif page == "AI Tutor":
-            st.info(
-                "AI integration will be connected through Member 2's module."
-            )
-
+            st.subheader("Your AI Learning Assistant")
+        
             subject = st.selectbox(
                 "Choose Subject",
-                ["Python Programming", "Mathematics", "Data Structures"]
+                ["Python Programming", "Mathematics", "Data         Structures"]
             )
-
+        
             question = st.text_area(
                 "Ask your question",
                 placeholder="What would you like to learn today?"
             )
-
+        
             if st.button("Ask AI Tutor", type="primary"):
                 if question.strip():
-                    st.warning("AI service is not connected yet.")
+                    try:
+                        with st.spinner("AI Tutor is thinking..."):
+                            ai = get_ai_service()
+        
+                            response = ai.ask(
+                                question,
+                                subject=subject,
+                                topic=None
+                            )
+        
+                        st.markdown("### AI Tutor's Answer")
+                        st.markdown(response.answer)
+        
+                        if response.sources:
+                            with st.expander("View learning sources"):
+                                for source in response.sources:
+                                    st.write(source)
+        
+                    except Exception as e:
+                        st.error(f"AI request failed: {e}")
+        
                 else:
-                    st.error("Please enter a question.")
-
+                    st.warning("Please enter a question.")
+        
         elif page == "Practice Quiz":
             st.subheader("Python Programming Quiz")
 
