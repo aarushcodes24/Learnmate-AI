@@ -29,13 +29,16 @@ class LearnMateAI:
 
     def __init__(self, config: AIConfig | None = None):
         self.config = config or get_ai_config()
+
         self.provider = GeminiProvider(
-        api_key=self.config.api_key,
-        model=self.config.model,
-        embedding_model=self.config.embedding_model,
-        embedding_dimensions=self.config.embedding_dimensions,
-)
+            api_key=self.config.api_key,
+            model=self.config.model,
+            embedding_model=self.config.embedding_model,
+            embedding_dimensions=self.config.embedding_dimensions,
+        )
+
         self.retriever = InMemoryRetriever()
+
         self.rag = RAGPipeline(
             self.provider,
             self.retriever,
@@ -44,7 +47,7 @@ class LearnMateAI:
             top_k=self.config.top_k,
             min_similarity=self.config.min_similarity,
         )
-
+        
     def ingest_text(self, text: str, metadata: dict | None = None) -> int:
         return len(self.rag.ingest_text(text, metadata))
 
